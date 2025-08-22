@@ -31,6 +31,10 @@
       // Explicitly handle OAuth callback for mobile reliability
       const params = new URLSearchParams(window.location.search);
       const code = params.get('code');
+      // Safari may return tokens in the hash fragment on some flows
+      const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+      const access_token = hash.get('access_token');
+      const refresh_token = hash.get('refresh_token');
       const next = async () => {
         const { data } = await client.auth.getUser();
         if (!data || !data.user) {
@@ -46,7 +50,18 @@
           if (code) {
             const { error } = await client.auth.exchangeCodeForSession(code);
             if (!error) {
-              history.replaceState({}, document.title, 'dashboard.html');
+              const base = window.location.pathname.replace(/[^/]+$/, '');
+              history.replaceState({}, document.title, base + 'dashboard.html');
+            }
+          } else if (access_token) {
+            // Handle implicit/hybrid flow tokens if present
+            const { error } = await client.auth.setSession({
+              access_token,
+              refresh_token
+            });
+            if (!error) {
+              const base2 = window.location.pathname.replace(/[^/]+$/, '');
+              history.replaceState({}, document.title, base2 + 'dashboard.html');
             }
           }
         } catch {}
