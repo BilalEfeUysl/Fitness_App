@@ -1,18 +1,28 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
+function showToast(message, type = 'success', duration = 3000) {
+  const container = document.getElementById('toast-container');
+  if (!container) return; // Eğer container yoksa hata vermesin
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.textContent = message;
+  
+  container.appendChild(toast);
+  
+  setTimeout(() => {
+    toast.classList.add('hiding');
+    toast.addEventListener('animationend', () => {
+      toast.remove();
+    });
+  }, duration);
+}
+
 (function init() {
-  const messageEl = document.getElementById('message');
   const emailPasswordForm = document.getElementById('emailPasswordForm');
   const googleBtn = document.getElementById('googleBtn');
 
-  function setMessage(text, isError) {
-    if (!messageEl) return;
-    messageEl.textContent = text || '';
-    messageEl.style.color = isError ? '#f87171' : '#94a3b8';
-  }
-
   if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) {
-    setMessage('Supabase yapılandırması eksik. Lütfen config.js dosyasını doldurun.', true);
+    showToast('Supabase yapılandırması eksik. Lütfen config.js dosyasını doldurun.', 'error');
     return;
   }
 
@@ -28,7 +38,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     const params = new URLSearchParams(window.location.search);
     const notice = params.get('notice');
     if (notice === 'verify') {
-      setMessage('Kayıt başarılı! Lütfen e‑posta doğrulama bağlantısına tıklayın.', false);
+      showToast('Kayıt başarılı! Lütfen e-posta doğrulama bağlantısına tıklayın.', 'success', 6000); // 6 saniye
+  
     }
   } catch {}
 
@@ -40,59 +51,59 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
   });
 
   if (emailPasswordForm) {
-    emailPasswordForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const email = document.getElementById('email').value.trim();
-      const password = document.getElementById('password').value;
-      setMessage('Giriş yapılıyor...');
-      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-      if (error) {
-        const msg = (error.message || '').toLowerCase();
-        if (msg.includes('email not confirmed')) {
-          setMessage('E-posta doğrulanmamış. Lütfen mailinizdeki doğrulama bağlantısına tıklayın.', true);
-        } else if (msg.includes('invalid login credentials')) {
-          setMessage('Geçersiz bilgiler. Üyeliğiniz yoksa önce kayıt olun.', true);
-        } else {
-          setMessage('Giriş hatası: ' + error.message, true);
-        }
-        return;
+  emailPasswordForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    
+    // "Giriş yapılıyor..." mesajını kaldırdık.
+    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+    
+    if (error) {
+      const msg = (error.message || '').toLowerCase();
+      if (msg.includes('email not confirmed')) {
+        showToast('E-posta doğrulanmamış. Lütfen mailinizi kontrol edin.', 'error');
+      } else if (msg.includes('invalid login credentials')) {
+        showToast('Geçersiz bilgiler. Üyeliğiniz yoksa önce kayıt olun.', 'error');
+      } else {
+        showToast('Giriş hatası: ' + error.message, 'error');
       }
-      if (data && data.user) {
-        setMessage('Giriş başarılı, yönlendiriliyor...');
+      return;
+    }
+    
+    if (data && data.user) {
+      showToast('Giriş başarılı, yönlendiriliyor...', 'success');
+      setTimeout(() => {
         window.location.href = 'dashboard.html';
-      }
-    });
-  }
+      }, 1000); // Bildirimi görmek için 1sn bekle
+    }
+  });
+}
 
   // Magic Link kaldırıldı
 
   // Sign-up moved to signup.html
 
   if (googleBtn) {
-    googleBtn.addEventListener('click', async () => {
-      setMessage('Google ile yönlendiriliyorsunuz...');
-      const redirectTo = basePath + 'callback.html';
-      try { console.log('[OAuth] redirectTo =', redirectTo); } catch {}
-      const { data, error } = await supabaseClient.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo,
-          queryParams: { prompt: 'select_account' },
-          skipBrowserRedirect: true,
-          flowType: 'pkce'
-        }
-      });
-      if (error) {
-        try { console.error('[OAuth] signInWithOAuth error', error); } catch {}
-        setMessage('Google giriş hatası: ' + error.message, true);
-        return;
-      }
-      if (data && data.url) {
-        try { console.log('[OAuth] redirect url =', data.url); } catch {}
-        window.location.href = data.url;
+  googleBtn.addEventListener('click', async () => {
+    // "Yönlendiriliyorsunuz..." mesajını kaldırdık.
+    const redirectTo = basePath + 'callback.html';
+    const { data, error } = await supabaseClient.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo,
+        skipBrowserRedirect: false // Mobil için bu daha güvenilir
       }
     });
-  }
+    if (error) {
+      showToast('Google giriş hatası: ' + error.message, 'error');
+      return;
+    }
+    if (data && data.url) {
+      window.location.href = data.url;
+    }
+  });
+}
 })();
 
 

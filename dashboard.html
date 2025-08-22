@@ -1,82 +1,266 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="tr">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#0f172a">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>Fitness App - Panel</title>
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-  <main class="container">
-    <section class="auth-card">
-      <h1>Panel</h1>
-      <p class="subtitle">Giriş başarılı. Burası geçici bir sayfa.</p>
-      <div id="userInfo" class="message"></div>
-      <button id="logoutBtn" class="btn">Çıkış Yap</button>
-    </section>
-  </main>
-  <script src="config.js"></script>
-  <script type="module">
-    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-    const messageEl = document.getElementById('userInfo');
-    const logoutBtn = document.getElementById('logoutBtn');
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0f172a" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <title>Fitness App - Panel</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <section class="auth-card">
+        <div id="loading-indicator">
+          <h1 class="app-title">
+            <span class="icon">⚡</span>
+            <span class="title-text">PowerFlow</span>
+          </h1>
+          <p
+            class="subtitle"
+            style="animation: pulse-text 1.5s ease-in-out infinite"
+          >
+            Yükleniyor...
+          </p>
+        </div>
 
-    if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) {
-      messageEl.textContent = 'Supabase yapılandırması eksik. Lütfen config.js dosyasını doldurun.';
-    } else {
-      const client = createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+        <!-- 2. Ana İçerik (Başlangıçta gizli olacak) -->
+        <div id="dashboard-content" class="hidden">
+          <h1 class="app-title">
+            <span class="icon">⚡</span>
+            <span class="title-text">PowerFlow</span>
+          </h1>
 
-      // Explicitly handle OAuth callback for mobile reliability
-      const params = new URLSearchParams(window.location.search);
-      const code = params.get('code');
-      // Safari may return tokens in the hash fragment on some flows
-      const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
-      const access_token = hash.get('access_token');
-      const refresh_token = hash.get('refresh_token');
-      const next = async () => {
-        const { data } = await client.auth.getUser();
-        if (!data || !data.user) {
-          window.location.href = 'index.html';
-          return;
-        }
-        const email = data.user.email || '(email yok)';
-        messageEl.textContent = `Hoş geldin, ${email}`;
-      };
+          <!-- Profile completion form for first-time Google users -->
+          <form
+            id="profileForm"
+            class="form hidden"
+            aria-label="Profil tamamlama"
+          >
+            <h3>Profil Bilgilerinizi Tamamlayın</h3>
+            <p class="subtitle">
+              Fitness hedeflerinize ulaşmak için son bir adım!
+            </p>
 
-      (async () => {
-        try {
-          if (code) {
-            const { error } = await client.auth.exchangeCodeForSession(code);
-            if (!error) {
-              const origin = window.location.origin;
-              const base = window.location.pathname.replace(/[^/]+$/, '');
-              history.replaceState({}, document.title, origin + base + 'dashboard.html');
-            }
-          } else if (access_token) {
-            // Handle implicit/hybrid flow tokens if present
-            const { error } = await client.auth.setSession({
-              access_token,
-              refresh_token
-            });
-            if (!error) {
-              const origin2 = window.location.origin;
-              const base2 = window.location.pathname.replace(/[^/]+$/, '');
-              history.replaceState({}, document.title, origin2 + base2 + 'dashboard.html');
-            }
+            <label for="profileEmail">E-posta</label>
+            <input
+              id="profileEmail"
+              name="profileEmail"
+              type="email"
+              readonly
+              placeholder="E-posta adresiniz"
+            />
+
+            <label for="profileUsername">Kullanıcı Adı</label>
+            <input
+              id="profileUsername"
+              name="profileUsername"
+              type="text"
+              required
+              placeholder="Kullanıcı adınız"
+            />
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="profileHeight">Boy (cm) *</label>
+                <input
+                  id="profileHeight"
+                  name="profileHeight"
+                  type="number"
+                  min="100"
+                  max="250"
+                  placeholder="170"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="profileWeight">Kilo (kg) *</label>
+                <input
+                  id="profileWeight"
+                  name="profileWeight"
+                  type="number"
+                  min="30"
+                  max="300"
+                  step="0.1"
+                  placeholder="70.5"
+                  required
+                />
+              </div>
+            </div>
+
+            <label for="profileBirthDate">Doğum Tarihi</label>
+            <input
+              id="profileBirthDate"
+              name="profileBirthDate"
+              type="date"
+              required
+            />
+
+            <button type="submit" class="btn primary">Profili Tamamla</button>
+          </form>
+
+          <!-- BU KISIM PROFİL TAMAM OLDUĞUNDA GÖRÜNECEK -->
+          <div id="main-app-view" class="hidden">
+            <p class="subtitle">Harika! Artık hazırsın.</p>
+            <!-- Buraya gelecekte fitness programı gibi şeyler gelecek -->
+          </div>
+
+          <button id="logoutBtn" class="btn">Çıkış Yap</button>
+        </div>
+      </section>
+    </main>
+    <div id="toast-container"></div>
+    <script src="config.js"></script>
+    <script type="module">
+      import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+      const loadingIndicator = document.getElementById("loading-indicator");
+      const dashboardContent = document.getElementById("dashboard-content");
+      const mainAppView = document.getElementById("main-app-view");
+
+      function showToast(message, type = "success", duration = 3000) {
+        const container = document.getElementById("toast-container");
+        const toast = document.createElement("div");
+        toast.className = `toast ${type}`;
+        toast.textContent = message;
+
+        container.appendChild(toast);
+
+        setTimeout(() => {
+          toast.classList.add("hiding");
+          // Animasyonun bitmesi için ek süre
+          toast.addEventListener("animationend", () => {
+            toast.remove();
+          });
+        }, duration);
+      }
+
+      const messageEl = document.getElementById("userInfo");
+      const logoutBtn = document.getElementById("logoutBtn");
+      const profileForm = document.getElementById("profileForm");
+
+      if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) {
+        messageEl.textContent = "Supabase yapılandırması eksik.";
+      } else {
+        const client = createClient(
+          window.SUPABASE_URL,
+          window.SUPABASE_ANON_KEY
+        );
+        let currentUser = null; // Kullanıcıyı saklamak için bir değişken tanımlıyoruz
+
+        // Sayfa yüklendiğinde kullanıcıyı kontrol et ve işlemleri başlat
+        const initializePage = async () => {
+          const { data } = await client.auth.getUser();
+          if (!data || !data.user) {
+            window.location.href = "index.html";
+            return;
           }
-        } catch {}
-        await next();
-      })();
 
-      logoutBtn.addEventListener('click', async () => {
-        await client.auth.signOut();
-        window.location.href = 'index.html';
-      });
-    }
-  </script>
-</body>
+          // Kullanıcı bilgisini global değişkene ata
+          currentUser = data.user;
+          showToast("Giriş başarılı!", "success");
+
+          // Profil bilgilerini kontrol et ve formu göster/gizle
+          checkProfile();
+        };
+
+        const checkProfile = async () => {
+          if (!currentUser) return;
+
+          const { data: profile } = await client
+            .from("profiles")
+            .select("username")
+            .eq("id", currentUser.id)
+            .single();
+
+          if (!profile || !profile.username) {
+            // Profil eksikse: Formu göster
+            profileForm.classList.remove("hidden");
+            mainAppView.classList.add("hidden"); // Ana ekranı gizle
+            document.getElementById("profileEmail").value = currentUser.email;
+          } else {
+            // Profil tamsa: Ana uygulama ekranını göster
+            profileForm.classList.add("hidden"); // Formu gizle
+            mainAppView.classList.remove("hidden");
+          }
+
+          // En sonda: Yükleniyor ekranını kaldır, ana içeriği göster
+          loadingIndicator.classList.add("hidden");
+          dashboardContent.classList.remove("hidden");
+        };
+
+        // Logout butonu
+        logoutBtn.addEventListener("click", async () => {
+          await client.auth.signOut();
+          window.location.href = "index.html";
+        });
+
+        // Profil tamamlama formu
+        if (profileForm) {
+          profileForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            if (!currentUser) {
+              messageEl.textContent =
+                "Kullanıcı oturumu bulunamadı. Lütfen tekrar giriş yapın.";
+              return;
+            }
+
+            const username = document
+              .getElementById("profileUsername")
+              .value.trim();
+            const height = document.getElementById("profileHeight").value;
+            const weight = document.getElementById("profileWeight").value;
+            const birthDate = document.getElementById("profileBirthDate").value;
+
+            try {
+              const { error: profileError } = await client
+                .from("profiles")
+                .upsert(
+                  {
+                    id: currentUser.id,
+                    username: username,
+                    height: height ? parseInt(height) : null,
+                    weight: weight ? parseFloat(weight) : null,
+                    birth_date: birthDate,
+                  },
+                  { onConflict: "id" }
+                );
+
+              if (profileError) throw profileError;
+
+              // Başarı bildirimi göster
+              showToast("Profil başarıyla tamamlandı!", "success");
+
+              // Formu gizle
+              profileForm.classList.add("hidden");
+
+              // Ana uygulama görünümünü göster
+              mainAppView.classList.remove("hidden");
+            } catch (err) {
+              if (
+                err.message &&
+                err.message.includes("profiles_username_key")
+              ) {
+                // Eğer kullanıcı adı hatasıysa, kullanıcıyı uyar
+                showToast(
+                  "Bu kullanıcı adı zaten alınmış. Lütfen farklı bir tane deneyin.",
+                  "error"
+                );
+              } else {
+                // Başka bir hata ise genel mesajı göster
+                showToast("Bir hata oluştu: " + err.message, "error");
+              }
+              console.error("Profil kaydetme hatası:", err);
+            }
+          });
+        }
+
+        // Sayfayı başlat
+        initializePage();
+      }
+    </script>
+  </body>
 </html>
-
-

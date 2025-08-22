@@ -1,78 +1,165 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="tr">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#0f172a">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>Fitness App - Kayıt Ol</title>
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-  <main class="container">
-    <section class="auth-card">
-      <h1>Kayıt Ol</h1>
-      <p class="subtitle">Yeni hesap oluşturun</p>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0f172a" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <title>Fitness App - Kayıt Ol</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <section class="auth-card">
+        <h1 class="app-title">
+          <span class="icon">⚡</span>
+          <span class="title-text">PowerFlow</span>
+        </h1>
+        <p class="subtitle">
+          🚀 <span class="highlight">Yeni hesap oluşturun</span>
+        </p>
 
-      <form id="signUpForm" class="form" aria-label="Kayıt formu">
-        <label for="signUpEmail">E-posta</label>
-        <input id="signUpEmail" name="signUpEmail" type="email" required placeholder="ornek@mail.com" autocomplete="email">
+        <form id="signUpForm" class="form" aria-label="Kayıt formu">
+          <label for="signUpEmail">E-posta</label>
+          <input
+            id="signUpEmail"
+            name="signUpEmail"
+            type="email"
+            required
+            placeholder="örnek@mail.com"
+            autocomplete="email"
+          />
 
-        <label for="signUpPassword">Şifre</label>
-        <input id="signUpPassword" name="signUpPassword" type="password" required placeholder="En az 6 karakter" autocomplete="new-password">
+          <label for="signUpPassword">Şifre</label>
+          <input
+            id="signUpPassword"
+            name="signUpPassword"
+            type="password"
+            required
+            placeholder="En az 6 karakter"
+            autocomplete="new-password"
+          />
 
-        <button type="submit" class="btn primary">Kayıt Ol</button>
-      </form>
+          <label for="signUpPasswordConfirm">Şifre Onaylama</label>
+          <input
+            id="signUpPasswordConfirm"
+            name="signUpPasswordConfirm"
+            type="password"
+            required
+            placeholder="Şifrenizi tekrar girin"
+            autocomplete="new-password"
+          />
+          <div id="passwordError" class="error-message hidden"></div>
 
-      <p id="message" class="message" role="status" aria-live="polite"></p>
+          <button type="submit" class="btn primary">Hesabımı oluştur</button>
+        </form>
 
-      <div class="divider"><span>Hesabın var mı?</span></div>
-      <a href="./index.html" class="btn block">Girişe Dön</a>
-    </section>
-  </main>
+        <div class="divider"><span>Hesabın var mı?</span></div>
+        <a href="./index.html" class="btn block">Girişe Dön</a>
+      </section>
+    </main>
+    <div id="toast-container"></div>
+    <script src="config.js"></script>
+    <script type="module">
+      import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-  <script src="config.js"></script>
-  <script type="module">
-    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-    const messageEl = document.getElementById('message');
-    function setMessage(text, isError){
-      messageEl.textContent = text || '';
-      messageEl.style.color = isError ? '#f87171' : '#94a3b8';
-    }
-    if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY){
-      setMessage('Supabase yapılandırması eksik. Lütfen config.js dosyasını doldurun.', true);
-    } else {
-      const client = createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
-      const form = document.getElementById('signUpForm');
-      form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const email = document.getElementById('signUpEmail').value.trim();
-        const password = document.getElementById('signUpPassword').value;
-        setMessage('Kayıt olunuyor...');
-        const redirectTo = new URL('dashboard.html', window.location.href).toString();
-        const { data, error } = await client.auth.signUp({
-          email,
-          password,
-          options: { emailRedirectTo: redirectTo }
-        });
-        if (error){
-          setMessage('Kayıt hatası: ' + error.message, true);
-          return;
-        }
-        if (data) {
-          if (data.session) {
-            // Bazı konfiglerde doğrudan giriş olabilir
-            window.location.href = 'dashboard.html';
+      // Toast bildirim fonksiyonunu buraya da ekliyoruz
+      function showToast(message, type = "success", duration = 4000) {
+        const container = document.getElementById("toast-container");
+        if (!container) return;
+        const toast = document.createElement("div");
+        toast.className = `toast ${type}`;
+        toast.textContent = message;
+
+        container.appendChild(toast);
+
+        setTimeout(() => {
+          toast.classList.add("hiding");
+          toast.addEventListener("animationend", () => {
+            toast.remove();
+          });
+        }, duration);
+      }
+
+      // Eski setMessage fonksiyonu silindi.
+
+      if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) {
+        showToast("Supabase yapılandırması eksik.", "error");
+      } else {
+        const client = createClient(
+          window.SUPABASE_URL,
+          window.SUPABASE_ANON_KEY
+        );
+        const form = document.getElementById("signUpForm");
+
+        form.addEventListener("submit", async (e) => {
+          e.preventDefault();
+
+          const email = document.getElementById("signUpEmail").value.trim();
+          const password = document.getElementById("signUpPassword").value;
+          const confirmPassword = document.getElementById(
+            "signUpPasswordConfirm"
+          ).value;
+          const passwordErrorEl = document.getElementById("passwordError");
+
+          if (password !== confirmPassword) {
+            passwordErrorEl.textContent = "Şifreler eşleşmiyor.";
+            passwordErrorEl.classList.remove("hidden");
             return;
           }
-          // Doğrulama isteniyorsa login sayfasına bilgi ile dön
-          const params = new URLSearchParams({ notice: 'verify' });
-          window.location.href = 'index.html?' + params.toString();
+          passwordErrorEl.classList.add("hidden");
+
+          const submitButton = form.querySelector('button[type="submit"]');
+          submitButton.disabled = true; // Butonu kilitle
+
+          // Sadece e-posta ve şifre ile kayıt
+          const { error } = await client.auth.signUp({
+            email,
+            password,
+          });
+
+          if (error) {
+            if (error.message.includes("User already registered")) {
+              showToast(
+                "Bu e-posta adresi zaten kayıtlı. Lütfen giriş yapın.",
+                "error"
+              );
+            } else {
+              showToast("Kayıt hatası: " + error.message, "error");
+            }
+            submitButton.disabled = false; // Hata durumunda butonu aç
+            return;
+          }
+
+          // Başarılı kayıt sonrası login sayfasına bilgi ile dön
+          const params = new URLSearchParams({ notice: "verify" });
+          window.location.href = "index.html?" + params.toString();
+        });
+
+        // Şifre eşleşme kontrolü (bu kısım aynı kaldı)
+        const passwordInput = document.getElementById("signUpPassword");
+        const confirmPasswordInput = document.getElementById(
+          "signUpPasswordConfirm"
+        );
+        const passwordErrorEl = document.getElementById("passwordError");
+
+        function checkPasswords() {
+          if (
+            confirmPasswordInput.value &&
+            passwordInput.value !== confirmPasswordInput.value
+          ) {
+            passwordErrorEl.textContent = "Şifreler eşleşmiyor.";
+            passwordErrorEl.classList.remove("hidden");
+          } else {
+            passwordErrorEl.classList.add("hidden");
+          }
         }
-      });
-    }
-  </script>
-</body>
+        passwordInput.addEventListener("input", checkPasswords);
+        confirmPasswordInput.addEventListener("input", checkPasswords);
+      }
+    </script>
+  </body>
 </html>
-
-
