@@ -14,13 +14,16 @@
       <h1>Yönlendiriliyorsunuz...</h1>
       <p class="subtitle">Lütfen bekleyin</p>
       <p id="msg" class="message"></p>
+      <p id="dbg" class="message" style="font-size:12px"></p>
     </section>
   </main>
   <script src="config.js"></script>
   <script type="module">
     import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     const m = document.getElementById('msg');
+    const d = document.getElementById('dbg');
     const setMsg = (t)=>{ if(m) m.textContent=t||'' };
+    const log = (t)=>{ try{ console.log('[callback]', t); if(d){ d.textContent = String(t) } }catch{} };
     if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) {
       setMsg('Yapılandırma eksik.');
     } else {
@@ -32,18 +35,20 @@
           const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
           const access_token = hash.get('access_token');
           const refresh_token = hash.get('refresh_token');
+          log('code=' + code + ' access_token=' + (access_token? '[present]':'-'));
           if (code) {
             const { error } = await client.auth.exchangeCodeForSession(code);
-            if (error) setMsg('Oturum kurulamadı: ' + error.message);
+            if (error) { setMsg('Oturum kurulamadı: ' + error.message); log(error.message); }
           } else if (access_token) {
             const { error } = await client.auth.setSession({ access_token, refresh_token });
-            if (error) setMsg('Oturum kurulamadı: ' + error.message);
+            if (error) { setMsg('Oturum kurulamadı: ' + error.message); log(error.message); }
           }
         } catch (e) {
-          setMsg('Hata: ' + (e?.message||e));
+          setMsg('Hata: ' + (e?.message||e)); log(e?.message||e);
         }
         const origin = window.location.origin;
         const base = window.location.pathname.replace(/[^/]+$/, '');
+        log('redirect -> ' + origin + base + 'dashboard.html');
         window.location.replace(origin + base + 'dashboard.html');
       })();
     }

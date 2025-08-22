@@ -72,6 +72,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     googleBtn.addEventListener('click', async () => {
       setMessage('Google ile yönlendiriliyorsunuz...');
       const redirectTo = basePath + 'callback.html';
+      try { console.log('[OAuth] redirectTo =', redirectTo); } catch {}
       const { data, error } = await supabaseClient.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -82,10 +83,12 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
         }
       });
       if (error) {
+        try { console.error('[OAuth] signInWithOAuth error', error); } catch {}
         setMessage('Google giriş hatası: ' + error.message, true);
         return;
       }
       if (data && data.url) {
+        try { console.log('[OAuth] redirect url =', data.url); } catch {}
         window.location.href = data.url;
       }
     });
