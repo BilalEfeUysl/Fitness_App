@@ -17,6 +17,11 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
   }
 
   const supabaseClient = createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+  const basePath = (() => {
+    const origin = window.location.origin;
+    const path = window.location.pathname.replace(/[^/]+$/, ''); // keep trailing slash and repo path
+    return origin + path; // e.g., https://user.github.io/Fitness_App/
+  })();
 
   // Login page notice from signup
   try {
@@ -66,7 +71,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
   if (googleBtn) {
     googleBtn.addEventListener('click', async () => {
       setMessage('Google ile yönlendiriliyorsunuz...');
-      const redirectTo = new URL('./callback.html', window.location.href).toString();
+      const redirectTo = basePath + 'callback.html';
       const { data, error } = await supabaseClient.auth.signInWithOAuth({
         provider: 'google',
         options: {

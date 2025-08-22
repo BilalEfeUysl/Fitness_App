@@ -42,8 +42,9 @@
         } catch (e) {
           setMsg('Hata: ' + (e?.message||e));
         }
+        const origin = window.location.origin;
         const base = window.location.pathname.replace(/[^/]+$/, '');
-        window.location.replace(base + 'dashboard.html');
+        window.location.replace(origin + base + 'dashboard.html');
       })();
     }
   </script>

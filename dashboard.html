@@ -50,8 +50,9 @@
           if (code) {
             const { error } = await client.auth.exchangeCodeForSession(code);
             if (!error) {
+              const origin = window.location.origin;
               const base = window.location.pathname.replace(/[^/]+$/, '');
-              history.replaceState({}, document.title, base + 'dashboard.html');
+              history.replaceState({}, document.title, origin + base + 'dashboard.html');
             }
           } else if (access_token) {
             // Handle implicit/hybrid flow tokens if present
@@ -60,8 +61,9 @@
               refresh_token
             });
             if (!error) {
+              const origin2 = window.location.origin;
               const base2 = window.location.pathname.replace(/[^/]+$/, '');
-              history.replaceState({}, document.title, base2 + 'dashboard.html');
+              history.replaceState({}, document.title, origin2 + base2 + 'dashboard.html');
             }
           }
         } catch {}
