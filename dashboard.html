@@ -3,6 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>Fitness App - Panel</title>
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -25,14 +27,32 @@
       messageEl.textContent = 'Supabase yapılandırması eksik. Lütfen config.js dosyasını doldurun.';
     } else {
       const client = createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
-      client.auth.getUser().then(({ data }) => {
+
+      // Explicitly handle OAuth callback for mobile reliability
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get('code');
+      const next = async () => {
+        const { data } = await client.auth.getUser();
         if (!data || !data.user) {
           window.location.href = 'index.html';
           return;
         }
         const email = data.user.email || '(email yok)';
         messageEl.textContent = `Hoş geldin, ${email}`;
-      });
+      };
+
+      (async () => {
+        try {
+          if (code) {
+            const { error } = await client.auth.exchangeCodeForSession(code);
+            if (!error) {
+              history.replaceState({}, document.title, 'dashboard.html');
+            }
+          }
+        } catch {}
+        await next();
+      })();
+
       logoutBtn.addEventListener('click', async () => {
         await client.auth.signOut();
         window.location.href = 'index.html';
