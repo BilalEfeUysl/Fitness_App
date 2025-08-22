@@ -66,7 +66,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
   if (googleBtn) {
     googleBtn.addEventListener('click', async () => {
       setMessage('Google ile yönlendiriliyorsunuz...');
-      const redirectTo = new URL('./dashboard.html', window.location.href).toString();
+      const redirectTo = new URL('./callback.html', window.location.href).toString();
       const { data, error } = await supabaseClient.auth.signInWithOAuth({
         provider: 'google',
         options: {
