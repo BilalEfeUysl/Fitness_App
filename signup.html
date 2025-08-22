@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fitness App - Kayıt Ol</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="container">
+    <section class="auth-card">
+      <h1>Kayıt Ol</h1>
+      <p class="subtitle">Yeni hesap oluşturun</p>
+
+      <form id="signUpForm" class="form" aria-label="Kayıt formu">
+        <label for="signUpEmail">E-posta</label>
+        <input id="signUpEmail" name="signUpEmail" type="email" required placeholder="ornek@mail.com" autocomplete="email">
+
+        <label for="signUpPassword">Şifre</label>
+        <input id="signUpPassword" name="signUpPassword" type="password" required placeholder="En az 6 karakter" autocomplete="new-password">
+
+        <button type="submit" class="btn primary">Kayıt Ol</button>
+      </form>
+
+      <p id="message" class="message" role="status" aria-live="polite"></p>
+
+      <div class="divider"><span>Hesabın var mı?</span></div>
+      <a href="index.html" class="btn block">Girişe Dön</a>
+    </section>
+  </main>
+
+  <script src="config.js"></script>
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+    const messageEl = document.getElementById('message');
+    function setMessage(text, isError){
+      messageEl.textContent = text || '';
+      messageEl.style.color = isError ? '#f87171' : '#94a3b8';
+    }
+    if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY){
+      setMessage('Supabase yapılandırması eksik. Lütfen config.js dosyasını doldurun.', true);
+    } else {
+      const client = createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+      const form = document.getElementById('signUpForm');
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('signUpEmail').value.trim();
+        const password = document.getElementById('signUpPassword').value;
+        setMessage('Kayıt olunuyor...');
+        const redirectTo = new URL('dashboard.html', window.location.href).toString();
+        const { data, error } = await client.auth.signUp({
+          email,
+          password,
+          options: { emailRedirectTo: redirectTo }
+        });
+        if (error){
+          setMessage('Kayıt hatası: ' + error.message, true);
+          return;
+        }
+        if (data) {
+          if (data.session) {
+            // Bazı konfiglerde doğrudan giriş olabilir
+            window.location.href = 'dashboard.html';
+            return;
+          }
+          // Doğrulama isteniyorsa login sayfasına bilgi ile dön
+          const params = new URLSearchParams({ notice: 'verify' });
+          window.location.href = 'index.html?' + params.toString();
+        }
+      });
+    }
+  </script>
+</body>
+</html>
+
+
