@@ -34,6 +34,13 @@
   </main>
 
   <script src="config.js"></script>
+  <script type="module">
+    // If OAuth returned to root with hash tokens, forward to callback handler
+    const h = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+    if (h.get('access_token')) {
+      window.location.replace('./callback.html' + window.location.hash);
+    }
+  </script>
   <script type="module" src="app.js"></script>
 </body>
 </html>
