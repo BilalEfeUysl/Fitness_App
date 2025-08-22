@@ -49,8 +49,25 @@
         const origin = window.location.origin;
         const base = window.location.pathname.replace(/[^/]+$/, '');
         log('redirect -> ' + origin + base + 'dashboard.html');
+        // Fallback: if session check fails, still redirect to dashboard
+        try {
+          const { data: userData } = await client.auth.getUser();
+          if (!userData || !userData.user) {
+            log('No user session, redirecting anyway...');
+          }
+        } catch (e) {
+          log('Session check failed: ' + e?.message);
+        }
+        // Always redirect to dashboard, let it handle auth state
         window.location.replace(origin + base + 'dashboard.html');
       })();
+      // Safety timeout: if anything fails, redirect after 3 seconds
+      setTimeout(() => {
+        const origin = window.location.origin;
+        const base = window.location.pathname.replace(/[^/]+$/, '');
+        log('Safety timeout redirect');
+        window.location.replace(origin + base + 'dashboard.html');
+      }, 3000);
     }
   </script>
 </body>
