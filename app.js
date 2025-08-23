@@ -92,7 +92,10 @@ function showToast(message, type = 'success', duration = 3000) {
       provider: 'google',
       options: {
         redirectTo,
-        skipBrowserRedirect: false // Mobil için bu daha güvenilir
+        skipBrowserRedirect: false, // Mobil için bu daha güvenilir
+        queryParams: {
+          prompt: 'select_account'
+        }
       }
     });
     if (error) {
